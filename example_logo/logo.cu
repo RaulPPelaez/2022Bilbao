@@ -38,8 +38,7 @@ struct GravityAndWall : public Interactor {
 			force[i].z += fz-gravity;
      		       });
   }
-  
-  
+    
 };
 
 auto readParticles(){
@@ -92,11 +91,13 @@ void runSimulation(std::shared_ptr<ParticleData> pd, std::shared_ptr<Integrator>
 }
 
 int main(int argc, char *argv[]){
-  Box box({256, 128, 160});
-  auto pd = readParticles();
-  auto bdhi = initializeSimulation(pd, box);
-  auto gravity = std::make_shared<GravityAndWall>(pd, -box.boxSize.z*0.5);
-  bdhi->addInteractor(gravity);
-  runSimulation(pd, bdhi);  
+  {
+    Box box({256, 128, 160});
+    auto pd = readParticles();
+    auto bdhi = initializeSimulation(pd, box);
+    auto gravity = std::make_shared<GravityAndWall>(pd, -box.boxSize.z*0.5);
+    bdhi->addInteractor(gravity);
+    runSimulation(pd, bdhi);
+  }
   return 0;
 }
