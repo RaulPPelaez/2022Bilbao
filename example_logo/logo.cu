@@ -72,7 +72,6 @@ auto initializeSimulation(std::shared_ptr<ParticleData> pd, Box box){
   return integrator;
 }
 
-
 void runSimulation(std::shared_ptr<ParticleData> pd, std::shared_ptr<Integrator> bdhi){
   std::ofstream out("/dev/stdout");
   Timer tim;
@@ -104,21 +103,18 @@ int main(int argc, char *argv[]){
 }
 
 
-//bdhi->addInteractor(createTPPoissonInteractor(pd));
+// bdhi->addInteractor(createTPPoissonInteractor(pd));
 //#include <Interactor/SpectralEwaldPoisson.cuh>
-// auto createTPPoissonInteractor(std::shared_ptr<ParticleData> pd){
-//   {
-//     auto charges = pd->getCharge(access::cpu, access::write);
-//     std::fill(charges.begin(), charges.end(), 1);
-//   }
-//   Poisson::Parameters par;
-//   par.box = Box({256, 128, 160});
-//   //Permittivity
-//   par.epsilon = 1;
-//   //Gaussian width of the sources
-//   par.gw = 4.0; 
-//   //Overall tolerance of the algorithm
-//   par.tolerance = 1e-2;
+//  auto createTPPoissonInteractor(std::shared_ptr<ParticleData> pd){
+//    {
+//      auto charges = pd->getCharge(access::cpu, access::write);
+//      std::fill(charges.begin(), charges.end(), 1);
+//    }
+//    Poisson::Parameters par;
+//    par.box = Box({256, 128, 160});
+//   par.epsilon = 1; //Permittivity
+//   par.gw = 4.0; //Gaussian width of the sources
+//   par.tolerance = 1e-2;//Overall tolerance of the algorithm
 //   //If a splitting parameter is passed
 //   // the code will run in Ewald split mode
 //   //Otherwise, the non Ewald version will be used
