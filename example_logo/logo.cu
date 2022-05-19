@@ -8,6 +8,7 @@ You can visualize the reuslts with superpunto
 #include"uammd.cuh"
 #include"Integrator/BDHI/BDHI_FCM.cuh"
 #include<fstream>
+#include <memory>
 
 using namespace uammd;
 
@@ -95,9 +96,34 @@ int main(int argc, char *argv[]){
     Box box({256, 128, 160});
     auto pd = readParticles();
     auto bdhi = initializeSimulation(pd, box);
-    auto gravity = std::make_shared<GravityAndWall>(pd, -box.boxSize.z*0.5);
+    auto gravity = std::make_shared<GravityAndWall>(pd, -box.boxSize.z*0.5);    
     bdhi->addInteractor(gravity);
     runSimulation(pd, bdhi);
   }
   return 0;
 }
+
+
+
+
+//bdhi->addInteractor(createTPPoissonInteractor(pd));
+//#include <Interactor/SpectralEwaldPoisson.cuh>
+// auto createTPPoissonInteractor(std::shared_ptr<ParticleData> pd){
+//   {
+//     auto charges = pd->getCharge(access::cpu, access::write);
+//     std::fill(charges.begin(), charges.end(), 1);
+//   }
+//   Poisson::Parameters par;
+//   par.box = Box({256, 128, 160});
+//   //Permittivity
+//   par.epsilon = 1;
+//   //Gaussian width of the sources
+//   par.gw = 4.0; 
+//   //Overall tolerance of the algorithm
+//   par.tolerance = 1e-2;
+//   //If a splitting parameter is passed
+//   // the code will run in Ewald split mode
+//   //Otherwise, the non Ewald version will be used
+//   //par.split = 1.0;
+//   return std::make_shared<Poisson>(pd, par);
+// }
