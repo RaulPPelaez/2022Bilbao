@@ -27,7 +27,7 @@ struct GravityAndWall : public Interactor {
     real gravity = 0.1;
     real wallStrength = 1.0;
     real h = this->zwall;
-    thrust::for_each_n(thrust::device,
+    thrust::for_each_n(thrust::cuda::par.on(st),
 		       thrust::make_counting_iterator<int>(0), pos.size(),
      		       [=]__device__(int i){			 
 			real fz = 0;
@@ -102,8 +102,6 @@ int main(int argc, char *argv[]){
   }
   return 0;
 }
-
-
 
 
 //bdhi->addInteractor(createTPPoissonInteractor(pd));
