@@ -2,7 +2,8 @@
  */
 #include<uammd.cuh>
 #include <misc/IBM.cuh>
-#include<thrust/random.h>
+#include"utils.cuh"
+
 using namespace uammd;
 
 // A simple Gaussian kernel compatible with the IBM module.
@@ -26,48 +27,6 @@ public:
   }
 };
 
-template<class Iter1, class Iter2>
-void spreadWithIBM(Grid grid,
-		   Iter1 positions,
-                   Iter2 dataAtCellPositions,
-                   Iter2 dataAtParticlePositions,
-                   int numberParticles){
-  const real width = 1; //An arbitrary width
-  const int support = 8;//An arbitrary support
-  auto kernel = std::make_shared<Gaussian>(width, support);
-  IBM<Gaussian> ibm(kernel, grid);
-  //Spreads dataAtParticlePositions into dataAtCellPositions
-  ibm.spread(positions, dataAtParticlePositions, dataAtCellPositions, numberParticles);
-}
-
-template<class Iter1, class Iter2>
-void interpolateWithIBM(Grid grid, Iter1 positions,
-                        Iter2 dataAtCellPositions,
-                        Iter2 dataAtParticlePositions,
-                        int numberParticles){
-  const real width = 1; //An arbitrary width
-  const int support = 8;//An arbitrary support
-  auto kernel = std::make_shared<Gaussian>(width, support);
-  IBM<Gaussian> ibm(kernel, grid);
-  //Interpolates dataAtCellPositions into dataAtParticlePositions
-  ibm.gather(positions, dataAtParticlePositions, dataAtCellPositions, numberParticles);
-}
-
-//Creates and returns a vector with random positions inside a cubic box of side L (always the same random positions) 
-thrust::device_vector<real3> generateRandomPositions(real L, int numberParticles){
-  thrust::device_vector<real3> positions(numberParticles);
-  auto it = thrust::make_counting_iterator<int>(0);
-  thrust::transform(it, it+numberParticles,
-		    positions.begin(),
-		    [=]__device__(int i){
-		      thrust::default_random_engine rng;
-		      thrust::uniform_real_distribution<real> dist(-L*0.5, L*0.5);
-		      rng.discard(i);
-		      return make_real3(dist(rng), dist(rng), dist(rng));
-		    }
-		    );
-  return positions;
-}
 
 int main(){
   real L = 32;
@@ -76,27 +35,29 @@ int main(){
   Grid grid(box, cellDim);
 
   int numberParticles = 1e6;
-  thrust::device_vector<real3> positions;
-  positions = generateRandomPositions(L, numberParticles);
-  
-  
   int ncells = grid.getNumberCells();
+  
+  thrust::device_vector<real3> positions = generateRandomPositions(L, numberParticles);
   thrust::device_vector<real> particleQuantity(ncells), gridQuantity(ncells);
   thrust::fill(particleQuantity.begin(), particleQuantity.end(), 1);
   thrust::fill(gridQuantity.begin(), gridQuantity.end(), 0);
-  
-  spreadWithIBM(grid,
-		thrust::raw_pointer_cast(positions.data()),
-		thrust::raw_pointer_cast(gridQuantity.data()),
-		thrust::raw_pointer_cast(particleQuantity.data()),
-		numberParticles);
-  
-  thrust::fill(particleQuantity.begin(), particleQuantity.end(), 0);  
-  interpolateWithIBM(grid,
-		thrust::raw_pointer_cast(positions.data()),
-		thrust::raw_pointer_cast(gridQuantity.data()),
-		thrust::raw_pointer_cast(particleQuantity.data()),
-		numberParticles);
+
+  const real width = 1; //An arbitrary width
+  const int support = 8;//An arbitrary support
+  auto kernel = std::make_shared<Gaussian>(width, support);
+
+  IBM<Gaussian> ibm(kernel, grid);
+  ibm.spread(thrust::raw_pointer_cast(positions.data()),
+	     thrust::raw_pointer_cast(particleQuantity.data()),
+	     thrust::raw_pointer_cast(gridQuantity.data()),
+	     numberParticles);
+
+  thrust::fill(particleQuantity.begin(), particleQuantity.end(), 0);
+
+  ibm.gather(thrust::raw_pointer_cast(positions.data()),
+	     thrust::raw_pointer_cast(particleQuantity.data()),
+	     thrust::raw_pointer_cast(gridQuantity.data()),
+	     numberParticles);
   //Now particleQuantity is filled with ones again
   return 0;
 }
