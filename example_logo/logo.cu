@@ -12,6 +12,8 @@ You can visualize the reuslts with superpunto
 
 using namespace uammd;
 
+// A simple Interactor that sums a gravitational force to each particle.
+// It also adds a potential wall at the bottom of the domain.
 struct GravityAndWall : public Interactor {
   real zwall;
 
@@ -19,17 +21,20 @@ struct GravityAndWall : public Interactor {
     Interactor(pd, "GravityAndWall"), zwall(zwall){}
   
   void sum(Interactor::Computables comp, cudaStream_t st) override{
+    //This function can be called with different responsabilities.
+    //Let us ignore that and compute only forces.
     // bool shouldComputeForces = comp.force;
     // bool shouldComputeEnergies = comp.energy;
-    // bool shouldComputeVirials = comp.virial;    
+    // bool shouldComputeVirials = comp.virial;
     auto pos = pd->getPos(access::gpu, access::read);
     auto force = pd->getForce(access::gpu, access::readwrite);
     real gravity = 0.1;
     real wallStrength = 1.0;
     real h = this->zwall;
+    //This thrust call runs a for loop in the GPU. Iterates over all particles
     thrust::for_each_n(thrust::cuda::par.on(st),
 		       thrust::make_counting_iterator<int>(0), pos.size(),
-     		       [=]__device__(int i){			 
+     		       [=]__device__(int i){
 			real fz = 0;
 			real pi_z = pos[i].z;
 			if(pi_z<=h){
@@ -39,10 +44,11 @@ struct GravityAndWall : public Interactor {
 			force[i].z += fz-gravity;
      		       });
   }
-    
+
 };
 
-auto readParticles(){
+// Reads a file with positions into an UAMMD particle container and returns it
+auto createParticles(){
   //Read contents of the file into a vector
   std::ifstream in ("pos.init");
   std::istream_iterator<real4> begin(in), end;
@@ -60,7 +66,8 @@ auto readParticles(){
   return pd;
 }
 
-auto initializeSimulation(std::shared_ptr<ParticleData> pd, Box box){
+// Initializes and returns a Force Coupling Methor Integrator module
+auto createIntegrator(std::shared_ptr<ParticleData> pd, Box box){
   using Scheme = BDHI::FCMIntegrator;
   Scheme::Parameters par;
   par.temperature = 1;
@@ -72,10 +79,11 @@ auto initializeSimulation(std::shared_ptr<ParticleData> pd, Box box){
   return integrator;
 }
 
+// Forwards the simulation and prints particles every once in a while
+// This function works for any Integrator module
 void runSimulation(std::shared_ptr<ParticleData> pd, std::shared_ptr<Integrator> bdhi){
   std::ofstream out("/dev/stdout");
-  Timer tim;
-  tim.tic();
+  Timer tim; tim.tic();
   int numberSteps = 2000;
   int printSteps  = 200;
   forj(0, numberSteps){
@@ -90,12 +98,24 @@ void runSimulation(std::shared_ptr<ParticleData> pd, std::shared_ptr<Integrator>
   System::log<System::MESSAGE>("mean FPS: %.2f", numberSteps/totalTime);
 }
 
+// Lets create a simulation and run it.
+// We need a particle container and an Integrator. We will also add an
+// Interactor to the Integrator.
+//
+// ParticleData
+//      ^
+//     / \
+//    /   \
+//   / 	Interactor: GravityAndWall
+//  /     /
+// /     v addInteractor()
+//Integrator: FCM Hydrodynamics
 int main(int argc, char *argv[]){
   {
     Box box({256, 128, 160});
-    auto pd = readParticles();
-    auto bdhi = initializeSimulation(pd, box);
-    auto gravity = std::make_shared<GravityAndWall>(pd, -box.boxSize.z*0.5);    
+    auto pd = createParticles(); //Particle container
+    auto bdhi = createIntegrator(pd, box); //Integrator
+    auto gravity = std::make_shared<GravityAndWall>(pd, -box.boxSize.z*0.5); //Interactor
     bdhi->addInteractor(gravity);
     runSimulation(pd, bdhi);
   }
@@ -103,18 +123,21 @@ int main(int argc, char *argv[]){
 }
 
 
-// bdhi->addInteractor(createTPPoissonInteractor(pd));
+//bdhi->addInteractor(createTPPoissonInteractor(pd));
 //#include <Interactor/SpectralEwaldPoisson.cuh>
-//  auto createTPPoissonInteractor(std::shared_ptr<ParticleData> pd){
-//    {
-//      auto charges = pd->getCharge(access::cpu, access::write);
-//      std::fill(charges.begin(), charges.end(), 1);
-//    }
-//    Poisson::Parameters par;
-//    par.box = Box({256, 128, 160});
-//   par.epsilon = 1; //Permittivity
-//   par.gw = 4.0; //Gaussian width of the sources
-//   par.tolerance = 1e-2;//Overall tolerance of the algorithm
+// auto createTPPoissonInteractor(std::shared_ptr<ParticleData> pd){
+//   {
+//     auto charges = pd->getCharge(access::cpu, access::write);
+//     std::fill(charges.begin(), charges.end(), 1);
+//   }
+//   Poisson::Parameters par;
+//   par.box = Box({256, 128, 160});
+//   //Permittivity
+//   par.epsilon = 1;
+//   //Gaussian width of the sources
+//   par.gw = 4.0;
+//   //Overall tolerance of the algorithm
+//   par.tolerance = 1e-2;
 //   //If a splitting parameter is passed
 //   // the code will run in Ewald split mode
 //   //Otherwise, the non Ewald version will be used
