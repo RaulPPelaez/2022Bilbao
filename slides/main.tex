@@ -130,11 +130,11 @@
 }
 \tcbsetforeverylayer{autoparskip}
 
-\title{Complex fluids in the GPU era}
-\subtitle{Algorithms and simulations}
+\title{UAMMD}
+\subtitle{A CUDA/C++ library for complex fluids}
 \author{Raúl P. Peláez}
 \institute{Universidad Autónoma de Madrid}
-\date{May 9, 2022}
+\date{\today}
 %\captionsetup[figure]{font=small,skip=0pt}
 \setbeamertemplate{itemize subitem}{$\rightarrow$}
 %\pdfmapfile{-mpfonts.map}
@@ -143,7 +143,6 @@
 \begin{frame}
   \titlepage
   \centering
-\small  Supervisor: Rafael Delgado-Buscalioni
   \begin{figure}
     \centering
     \includegraphics[width=0.25\linewidth]{UAMlogo}
@@ -226,38 +225,6 @@
     \end{tikzpicture}
     \caption{Figure courtesy of Rafael Delgado-Buscalioni.}
   \end{figure}
-  \note<1>{
-    \begin{itemize}
-    \item The modeling and simulation of complex fluids thus greatly exceeds the scope of the typical computation window. Speaking in terms of this numerical landscape we cannot specialize in a single window. If we want to model a complex fluid, we must take into account sizes ranging from nanometers to meters and times going from nanoseconds to seconds. And even then, we are restricted to a narrow-ish area of the lanscape, being unable to, for instance, simulate a nanometer-sized system for several hours of physical time.
-    \item I claim that my software, UAMMD, covers the whole range of the complex-fluid domain, and I hope to convince you during this talk that this is true.
-    \item Anyway, countless numerical and mathematical techniques exists depending on our window of interest, and their naming scheme can sometimes be a little obtuse.      
-    \end{itemize}
-  }
-  \note<2>{
-    \begin{itemize}
-    \item Broadly speaking, we can categorize the landscape into three families of methods.
-    \item When studying small systems, we usually choose a fully Lagrangian scheme, meaning that we track the evolution of individual particles, or markers.
-    \end{itemize}
-  }
-  \note<3>{
-    \begin{itemize}
-    \item On the contrary, when focusing on macroscopic systems we usually choose a fully Eulerian description, where we loose track of individual particles and instead describe continuous fields.      
-    \end{itemize}
-  }
-  \note<4>{
-    \begin{itemize}
-    \item In the middle, in what we call the mesoscale, there is a mixed domain of Eulerian-Lagrangian methods, where we describe both a group of particles and continuous fields that are somehow coupled.
-    \item The Immersed boundary method is the canonical strategy used to describe this coupling.
-    \item This is the realm of hydrodynamics, where most of the examples I showed you take place.
-    \item I would like to point out now that my algorithmic contributions lie in this regime.
-    \end{itemize}
-  }
-  \note<5>{
-    \begin{itemize}
-    \item Let us focus in the red area, covering an, in principle, disparate range of descriptions all related to complex fluids.
-    \item If we start at the atomic scale and want to climb up the spatio-temporal scale of modeling we can make use of coarse graining techniques, where we want to somehow average out the fast degrees-of-freedom that are of no interest to us. For instance, if we are describing a submarine running under the sea (by all means a complex fluid) we really want to leave the individual water atoms out of our description.
-    \end{itemize}
-    }
 \end{frame}
 
 \subsubsection{Coarse-grained levels of description}
@@ -268,9 +235,6 @@
     \centering
     \includesvg[width=0.55\linewidth]{gfx/multiscale}
   \end{figure}
-  \note{
-    In particular, we can cover the whole range using the following four levels of coarse-grained description. Going through them will help us understand how we can design a framework that covers them all.
-    }
 \end{frame}
 
 
@@ -279,96 +243,29 @@
   \framesubtitle{Usual levels of coarse-grained description}
   \begin{columns}[T]
     \begin{column}{0.5\linewidth}
-        \begin{tikzpicture}
-          \node[anchor = south west, inner sep = 0] (image) {\includesvg[width=\linewidth]{gfx/multiscale}};
-          \begin{scope}[shift={(image.south west)},x={(image.south east)},y={(image.north west)}]
-            %Draw a overlaying grid to easily see where the rectangles must be, this can be commented out in the final version
-%            \draw foreach \xy in {0,0.1,...,1.001}{
-%            (\xy,0) -- node[pos=0,below]{\pgfmathprintnumber{\xy}} (\xy,1)
-%            (0,\xy) -- node[pos=0,left]{\pgfmathprintnumber{\xy}} (1,\xy)};
-            \foreach[count=\i] \mypath in {
-              {(0,1) rectangle (0.48,0.55)},
-              {(0.48,1) rectangle (1.0,0.55)},
-              {(0,0.55) rectangle (0.48,0)},
-              {(0.48,0.55) rectangle (1,0)},
-              {(0,1) rectangle (1,0)},
-              {(0,1) rectangle (1,0)}
-            }{
-              \filldraw<\i>[white,opacity=0.9,even odd rule] (0,0) rectangle (1,1) \mypath;
-            }
-          \end{scope}
-        \end{tikzpicture}
+      \includesvg[width=\linewidth]{gfx/multiscale}
       \end{column}
       \begin{column}{0.45\linewidth}
       \begin{center}
         \textbf{Relevant variables:}
       \end{center}
       \begin{itemize}
-      \item<1-> $\vec{q}_i$: Position of particle $i$.
-      \item<1-3,5-> $\vec{u}_i$: Velocity of particle $i$.
-      \item<3,5-> $\xi(\vec{q}_{ij})$: Friction kernel.
-      \item<2,5-> $\vec{v}(\vec{r},t)$: Fluid velocity field.
-      \item<4-> $\tens{M}(\vec{q}_{ij})$: Mobility tensor.
+      \item $\vec{q}_i$: Position of particle $i$.
+      \item $\vec{u}_i$: Velocity of particle $i$.
+      \item $\xi(\vec{q}_{ij})$: Friction kernel.
+      \item $\vec{v}(\vec{r},t)$: Fluid velocity field.
+      \item $\tens{M}(\vec{q}_{ij})$: Mobility tensor.
       \end{itemize}
-      \centering      
-      \only<1-4>{\textbf{Typical timescale:}\newline}
-      \begin{overprint}
-        \only<1>{$\tau \sim 10^{-12}s$}
-        \only<2>{$\tau \sim 10^{-\{9-6\}}s$}
-        \only<3>{$\tau \sim 10^{-5}s$}
-        \only<4>{$\tau \sim 10^{-3}s$}
-      \end{overprint}
-      \only<5->{\textbf{Timescale range:}\newline $\tau \sim [10^{-12}, 10^{-3}]s$}
+      \centering
+      \textbf{Timescale range:}\newline $\tau \sim [10^{-12}, 10^{-3}]s$
     \end{column}
   \end{columns}
-  \only<1>{\begin{textblock*}{0.5\linewidth}(0.05\linewidth, 0.55\paperheight)}
-  \only<2>{\begin{textblock*}{0.53\linewidth}(0.05\linewidth, 0.49\paperheight)}
-  \only<3>{\begin{textblock*}{0.5\linewidth}(0.05\linewidth, 0.2\paperheight)}
-  \only<4,5>{\begin{textblock*}{0.5\linewidth}(0.05\linewidth, 0.17\paperheight)}
-  \only<6>{\begin{textblock*}{0.99\linewidth}(0.04\linewidth,0.23\paperheight)}
-    \begin{block}<1-4>{
-        \only<1>{Molecular Dynamics (MD)}
-        \only<2>{Fluctuating Hydrodynamics}
-        \only<3>{Langevin Dynamics (LD)}
-        \only<4>{Brownian Dynamics (BD)}
-      }{$$\only<1>{%
-          \begin{aligned}
-            m\ddot{\vec{\ppos}} &= \vec{F}\\
-            \vec{\pvel} &= \dot{\vec{\ppos}}
-          \end{aligned}
-        }%
-      \only<2>{%
-          \begin{aligned}
-            \rho\partial_t\vec{\fvel} &= -\vec{\partial}_{\vec{\fpos}}\cdot \tens{\sigma} + \vec{f} + \text{fluct}\\
-            \int_{V_p}\vec{f}d\vec{\fpos} &= \vec{F}_i\quad\text{and}\quad \vec{u}_i = \int_{V_p}\vec{\fvel}d\vec{\fpos}
-          \end{aligned}%
-       }%
-      \only<3>{m d\vec{\pvel} = \vec{F}dt - \xi\vec{\pvel}dt +  \sqrt{2\xi\kT}\vec{\noise}}%
-      \only<4>{%
-          \begin{aligned}%
-            d\vec{\ppos} =& \tens{M}\vec{F}dt + \sqrt{2\kT\tens{M}}d\vec{\noise}\\%
-                          &+ \kT\vec{\partial}_{\vec{\ppos}}\cdot\tens{M}dt.%
-          \end{aligned}%
-        }%
-        $$}
-    \end{block}
-    \begin{alertblock}<6>{\centering \Large We always have}
+  \only<2>{\begin{textblock*}{0.99\linewidth}(0.04\linewidth,0.8\paperheight)
+    \begin{alertblock}{\centering \Large We always have}
       \centering \Large
       Interacting \emph{particles} with a \emph{state} that \emph{evolves}.
     \end{alertblock}
   \end{textblock*}
-  \centering
-  \only<1>{
-    Supervector notation $\vec{q} := \{\vec{q}_1,\dots,\vec{q}_N\}$
-  }
-  \only<2>{
-    $\partial_t := \frac{\partial}{\partial t} \rightarrow \vec{\partial}_{\vec{r}} := \nabla := \left(\partial_x,\partial_y,\partial_z\right) $ 
-  }
-  \only<3>{
-    $\vec{\noise}$: Wienner increments, $\mathcal{N}(0,dt)$
-  }
-  \only<4>{
-    $d\vec{\noise}$: Wienner increments, $\mathcal{N}(0,dt)$
   }
 \end{frame}
 
@@ -621,13 +518,8 @@
                 \end{aligned}
               \end{equation*}
             }%
-            \only<7>{
-              \begin{equation*}
-                \tens{M}_{ij}=\iint{\delta_a(\vec{r}-\vec{\ppos}_j)\oper{G}(\vec{r},\vec{r}^\prime)\delta_a(\vec{\ppos}_i-\vec{r}^\prime)d\vec{r}^\prime d\vec{r}}
-              \end{equation*}
-            }%
-            \onslide<8->{\centering $\oper{G} :=-\eta^{-1}\nabla^{-2}\left(\mathbb{I} - \nabla\nabla^{-2}\nabla\right)$\\}%
-            \onslide<9>{
+            \onslide<7->{\centering $\oper{G} :=-\eta^{-1}\nabla^{-2}\left(\mathbb{I} - \nabla\nabla^{-2}\nabla\right)$\\}%
+            \onslide<8>{
               \begin{block}{\centering Open boundaries}
                 \centering $\oper{G}\rightarrow \tens{O}(\vec{r}) = \frac{1}{8\pi\eta r}\left(\mathbb{I} - \frac{\vec{r}\otimes\vec{r}}{r^2}\right)$
               \end{block}
