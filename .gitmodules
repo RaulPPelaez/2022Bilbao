@@ -1,3 +1,3 @@
 [submodule "uammd"]
 	path = uammd
-	url = git@github.com:RaulPPelaez/uammd
+	url = https://github.com/RaulPPelaez/uammd
