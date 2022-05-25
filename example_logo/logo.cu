@@ -5,8 +5,10 @@ You can visualize the reuslts with superpunto
 */
 
 //This include contains the basic needs for an uammd project
-#include"uammd.cuh"
-#include"Integrator/BDHI/BDHI_FCM.cuh"
+#include "uammd.cuh"
+#include "Integrator/BDHI/BDHI_EulerMaruyama.cuh"
+#include "Integrator/BDHI/BDHI_FCM.cuh"
+#include"Integrator/BrownianDynamics.cuh"
 #include<fstream>
 #include <memory>
 
@@ -37,6 +39,7 @@ struct GravityAndWall : public Interactor {
      		       [=]__device__(int i){
 			real fz = 0;
 			real pi_z = pos[i].z;
+			//Wall repulsion
 			if(pi_z<=h){
 			   real distanceToWall = fabs(pi_z-h);
 			   fz += wallStrength*distanceToWall*distanceToWall;
@@ -68,7 +71,8 @@ auto createParticles(){
 
 // Initializes and returns a Force Coupling Methor Integrator module
 auto createIntegrator(std::shared_ptr<ParticleData> pd, Box box){
-  using Scheme = BDHI::FCMIntegrator;
+  using Scheme = BDHI::EulerMaruyama<BDHI::FCM>;
+  //using Scheme = BD::EulerMaruyama;
   Scheme::Parameters par;
   par.temperature = 1;
   par.viscosity = 1;
@@ -117,6 +121,7 @@ int main(int argc, char *argv[]){
     auto bdhi = createIntegrator(pd, box); //Integrator
     auto gravity = std::make_shared<GravityAndWall>(pd, -box.boxSize.z*0.5); //Interactor
     bdhi->addInteractor(gravity);
+    //bdhi->addInteractor(createTPPoissonInteractor(pd));
     runSimulation(pd, bdhi);
   }
   return 0;
@@ -144,3 +149,4 @@ int main(int argc, char *argv[]){
 //   //par.split = 1.0;
 //   return std::make_shared<Poisson>(pd, par);
 // }
+//
