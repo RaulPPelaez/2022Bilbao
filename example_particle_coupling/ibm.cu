@@ -38,7 +38,7 @@ int main(){
   int ncells = grid.getNumberCells();
   
   thrust::device_vector<real3> positions = generateRandomPositions(L, numberParticles);
-  thrust::device_vector<real> particleQuantity(ncells), gridQuantity(ncells);
+  thrust::device_vector<real> particleQuantity(numberParticles), gridQuantity(ncells);
   thrust::fill(particleQuantity.begin(), particleQuantity.end(), 1);
   thrust::fill(gridQuantity.begin(), gridQuantity.end(), 0);
 
