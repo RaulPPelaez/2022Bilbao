@@ -147,293 +147,108 @@
     \centering
     \includegraphics[width=0.25\linewidth]{UAMlogo}
   \end{figure}
-  \note{
-    \begin{itemize}
-    \item My work during these past years has been devoted to exploiting the GPU for the simulation of complex fluids.
-    \item This is a GPU. A powerful hardware with a unique programming model.
-    \item Harvesting its tremendous raw power requires developing algorithms and software specifically tailored for it.
-    \item Now, before we start, let me give you a summary of this talk.
-    \end{itemize}
-  }
 \end{frame}
 
-\section{Introduction}
-\begin{frame}
-  \frametitle{Talk outline}
-    \tableofcontents[
-    sectionstyle=show/show,
-    subsectionstyle=hide/hide/hide,
-    subsubsectionstyle=hide/hide/hide/hide
-    ]
-\end{frame}
-
-\subsection{Complex fluids}
-\begin{frame}
-  \frametitle{Complex fluids}
-\centering \Large  The coexistence between a liquid and solid phase
-  \begin{figure}
-    \centering
-    \includegraphics[width=0.5\linewidth]{membrane}\includegraphics[width=0.2\linewidth]{star}
-    \includegraphics[width=0.2\linewidth]{optofluidics}\\
-    {\fontsize{4.5}{12} \selectfont [{\bf Panzuela, S. and Delgado-Buscalioni, R.} PRL 2018.]  -  [{\bf Raul P. Pelaez and Delgado-Buscalioni, R.} Macromolecules 2020]    -   [{\bf  Mel\'endez, M.} et. al. PRE 2019.]}\\
-    \only<1>{\movie[autostart,loop,poster,showcontrols=true,width=0.3\linewidth]{\includegraphics[width=0.3\linewidth]{virus_scr.png}}{gfx/virus.mp4}}%
-    \only<2>{\includegraphics[width=0.235\linewidth]{lipostrandspablo.png}}%
-    \movie[autostart,loop,poster,showcontrols=true,width=0.3\linewidth]{\includegraphics[width=0.3\linewidth]{rots.png}}{gfx/rots.mp4}%
-    \only<1>{%
-      \includegraphics[width=0.3\linewidth]{q2Dcolorstripe}\\
-      {\fontsize{4.5}{12} \selectfont [Courtesy of Pablo Ibañez] ------------ [Courtesy of Berta Tinao] -------------- [{\bf Raul P. Pelaez} et. al. JSTAT 2018.]}%
-    }
-    \only<2>{%
-      \includegraphics[width=0.22\linewidth]{mnppablo.png}\\
-      {\fontsize{4.5}{12} \selectfont [Courtesy of Pablo Palacios] ------------------------ [Courtesy of Berta Tinao] ----------------------------------------- [Courtesy of Pablo Palacios]}
-    }
-  \end{figure}
-  \note<1>{
-    \scriptsize
-    \begin{itemize}
-    \item I showed you what a GPU is at the start. In order to understand the rest of the title you also need to know what a complex fluid is.
-    \item Although its definition is a little more general, we understand a complex fluids as the coexistence between a solid and a liquid phase. And note that with solid, we usually mean soft, such as a colloidal particle or a cell's lipidic membrane.
-    \item This broad definition encloses a wide variety of systems, many times of biological nature. In this slide I show you a bunch of examples, all of them taken from past and ongoing works in our group.
-    \item Starting up we can see coarse-grained representations of a lipid bilayer, a star polymer under shear flow, a nano dumbell swimming and spinning in a fluid under optically-induced vortexes.
-    \item A virus capsid, filled with a particular protein, which is being pressed by an AFM tip. Next we have a group of lipidic vesicles, one of them contains a ferromagnetic particle subjected to a magnetic field, spinning the vesicle. This allows to somewhat control the locomotion of the vesicles. The final picture shows the diffusion of the concentration of a colloidal suspension under strong two-dimensional confinement in different regimes.
-    \end{itemize}    
-  }  
-  \note<2>{
-    \begin{itemize}
-    \item Here, the figure to the right shows a model of the rotating vesicles a member of group, Pablo, is studying now, in part using the tools and algorithms that I will shortly introduce.
-    \item Pablo has also studied other kinds of magnetic nanoparticles.
-    \item These examples showcase enormous span of the spatio-temporal scales associated with complex fluids. Sometimes we need to focus on single polymers, or describe a single protein in detail. Other times we want to model vesicles that are almost visible to the naked eye.
-    \end{itemize}
-  }
-\end{frame}
-
-
-\subsubsection{Numerical techniques}
-\begin{frame}
-  \frametitle{Complex fluids}
-  \framesubtitle{The spatio-temporal landscape of numerical techniques.}
-  \begin{figure}
-    \centering
-    \begin{tikzpicture}
-      \only<1-5>{\node[anchor=south west, inner sep=0] (image) {\includesvg[width=0.8\linewidth]{gfx/landscape}};}
-      \begin{scope}[shift={(image.south west)},x={(image.south east)},y={(image.north west)}]
-        %\draw foreach \xy in {0,0.1,...,1.001}{(\xy,0) -- node[pos=0,below]{\pgfmathprintnumber{\xy}} (\xy,1)(0,\xy) -- node[pos=0,left]{\pgfmathprintnumber{\xy}} (1,\xy)};
-        \only<2>{\filldraw[red, opacity=0.6] (0.12,1) rectangle (0.5,0.07) node[midway] (A) {};\node[above=50pt of A, black]{\contourlength{1pt}\contour{white}{\textbf{Fully Lagrangian}}};}
-        \only<4>{\filldraw[blue, opacity=0.6] (0.5,1) rectangle (0.72,0.07) node[midway] (A) {};\node[below=40pt of A, black, align=left]{\contourlength{1pt}\contour{white}{\textbf{Immersed}}\\\contourlength{1pt}\contour{white}{\textbf{Boundary}}}; \node[above=30pt of A, black, align=left]{\contourlength{1pt}\contour{white}{\textbf{Eulerian}}\\\contourlength{1pt}\contour{white}{\textbf{Lagrangian}}};}
-        \only<3>{\filldraw[green, opacity=0.6] (0.72,1) rectangle (1,0.07) node[midway] (A) {};\node[above=50pt of A, black]{\contourlength{1pt}\contour{white}{\textbf{Fully Eulerian}}};}
-      \end{scope}
-    \end{tikzpicture}
-    \caption{Figure courtesy of Rafael Delgado-Buscalioni.}
-  \end{figure}
-\end{frame}
-
-\subsubsection{Coarse-grained levels of description}
-\begin{frame}
-  \frametitle{Complex fluids}
-  \framesubtitle{Usual levels of coarse-grained description}
-  \begin{figure}
-    \centering
-    \includesvg[width=0.55\linewidth]{gfx/multiscale}
-  \end{figure}
-\end{frame}
-
-
-\begin{frame}[t]
-  \frametitle{Complex fluids}
-  \framesubtitle{Usual levels of coarse-grained description}
-  \begin{columns}[T]
-    \begin{column}{0.5\linewidth}
-      \includesvg[width=\linewidth]{gfx/multiscale}
-      \end{column}
-      \begin{column}{0.45\linewidth}
-      \begin{center}
-        \textbf{Relevant variables:}
-      \end{center}
-      \begin{itemize}
-      \item $\vec{q}_i$: Position of particle $i$.
-      \item $\vec{u}_i$: Velocity of particle $i$.
-      \item $\xi(\vec{q}_{ij})$: Friction kernel.
-      \item $\vec{v}(\vec{r},t)$: Fluid velocity field.
-      \item $\tens{M}(\vec{q}_{ij})$: Mobility tensor.
-      \end{itemize}
-      \centering
-      \textbf{Timescale range:}\newline $\tau \sim [10^{-12}, 10^{-3}]s$
-    \end{column}
-  \end{columns}
-  \only<2>{\begin{textblock*}{0.99\linewidth}(0.04\linewidth,0.8\paperheight)
-    \begin{alertblock}{\centering \Large We always have}
-      \centering \Large
-      Interacting \emph{particles} with a \emph{state} that \emph{evolves}.
-    \end{alertblock}
-  \end{textblock*}
-  }
-\end{frame}
-
-\section{Computational challenges}
-\begin{frame}
-  \frametitle{Computational challenges}
-  \setbeamercovered{transparent=40}
-  \begin{columns}[T]
-    \begin{column}{0.6\linewidth}
-      \begin{enumerate}
-        \Large
-      \item Short range interactions
-      \item Particle-grid coupling
-      \end{enumerate}
-      \begin{overlayarea}{\linewidth}{0.5\paperheight}
-        \only<2>{\centering Example: Lennard-Jones potential
-          $$U_{LJ}(r) = 
-            \begin{cases}
-              4 \epsilon \left[ \left(\frac{\sigma}{r}\right)^{12} - \left( \frac{\sigma}{r}\right)^6 \right] & r<r_c\\
-              0 & r\ge r_c
-            \end{cases}$$
-          }
-      \end{overlayarea}
-    \end{column}
-    \begin{column}{0.4\linewidth}
-      \only<2>{
-        \begin{figure}
-          \centering                 
-          \includesvg[width=\linewidth]{gfx/nlist}
-        \end{figure}
-      }
-    \end{column}
-  \end{columns}
-\end{frame}
-
-\subsection{Short range}
-\begin{frame}
-  \frametitle{Short range interactions}
-  \framesubtitle{Neighbour lists}
-  \begin{figure}
-    \centering
-    \includesvg[width=0.8\linewidth]{gfx/sketchUAMMD_nlist}%    
-  \end{figure}
-\end{frame}
-\begin{frame} 
-  \frametitle{Short range interactions}
-  \framesubtitle{Neighbour lists: Performance}
-  \begin{block}{Example: Lennard-Jones potential, $r_c=2.5\sigma$ and $\varepsilon = kT$.}
-    $$U_{LJ}(r) = 
-    \begin{cases}
-      4 \varepsilon \left[ \left(\frac{\sigma}{r}\right)^{12} - \left( \frac{\sigma}{r}\right)^6 \right] & r<r_c\\
-      0 & r\ge r_c
-    \end{cases}$$
-  \end{block}
-  \includegraphics[width=0.49\linewidth]{nlistperf_dens1}
-  \includegraphics[width=0.49\linewidth]{nlistperf_dens0.1}
-  \begin{center}
-    \scriptsize Ran with a single RTX2080Ti GPU.
-  \end{center}
-\end{frame}
-
-\subsection{Particle-grid coupling}
-\begin{frame}
-  \frametitle{Computational challenges}
-  \setbeamercovered{transparent=40}
-  \begin{columns}[T]
-    \begin{column}{0.6\linewidth}
-      \begin{enumerate}
-        \Large
-      \item {\transparent{0.4} Short range interactions}
-      \item Particle-grid coupling
-      \end{enumerate}
-      \begin{overlayarea}{\linewidth}{0.5\paperheight}
-        \only<2->{
-          \centering Spreading ($\oper{S}$):
-          $$\vec{f}(\vec{r}) = \oper{S}(\vec{r})\vec{F} := \sum_i \vec{F}_i\delta_a(\vec{r}-\vec{q}_i)$$
-          \only<3->{{$\delta_a(\vec{r}) := \phi(r_x)\phi(r_y)\phi(r_z)\rightarrow$ Smeared delta}\newline\newline}
-        }
-        \only<4>{
-          \centering Interpolation ($\oper{J}$):
-          $$\vec{u}_i = \oper{J}_{\vec{q}_i}\vec{v}(\vec{r}) = \int \vec{v}(\vec{r})\delta_a(\vec{r}-\vec{q}_i)d\vec{r}$$
-        }
-        \only<5>{
-          \centering Interpolation ($\oper{J}$):
-          $$\vec{u}_i = \oper{J}_{\vec{q}_i}\vec{v}(\vec{r}) \approx \sum_n \vec{v}_n\delta_a(\vec{r}_n-\vec{q}_i)h^3$$
-        }        
-      \end{overlayarea}
-    \end{column}
-    \begin{column}{0.4\linewidth}
-      \onslide*<2->{
-      \begin{figure}
-        \centering                 
-        \only<2>{\includesvg[width=\linewidth]{gfx/ibm_spread}}%
-        \only<3>{          
-          \resizebox{\linewidth}{!}{
-            \begin{tikzpicture}
-              \begin{axis}[ticks=none,samples=100,ylabel={\Huge $\phi(r)$},xlabel={\Huge $r$}, xlabel near ticks, ylabel near ticks, axis line style=ultra thick]
-                \addplot[blue, ultra thick, domain=-1:1] {exp(-x^2*10)};
-              \end{axis}
-            \end{tikzpicture}
-          }
-        }
-        \only<4,5>{\includesvg[width=\linewidth]{gfx/ibm_interp}}%
-      \end{figure}
-    }
-    \only<3>{\centering Example: $\phi(r) \propto e^{-\frac{r^2}{2\sigma^2}}$}
-    \end{column}
-  \end{columns}
-  \setbeamercovered{transparent=0}
-  \onslide<2>{{\footnotesize Supervector notation $\vec{F} := \{\vec{F}_1,\dots,\vec{F}_N\}$}}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Particle-grid coupling}
-  \framesubtitle{Performance}
-  \centering
-  \includesvg[width=0.35\columnwidth]{gfx/gridparticlesdense}
-  \includegraphics[width=0.55\columnwidth]{gfx/ibm_comp_dens1_sorted_2080ti}
-    \begin{center}
-    \scriptsize 3D random distribution. Ran with a single RTX2080Ti GPU.
-  \end{center}
-\end{frame}
+%\section{Introduction}
+%\begin{frame}
+%  \frametitle{Talk outline}
+%    \tableofcontents[
+%    sectionstyle=show/show,
+%    subsectionstyle=hide/hide/hide,
+%    subsubsectionstyle=hide/hide/hide/hide
+%    ]
+%\end{frame}
+%
+%\subsection{Complex fluids}
+%\begin{frame}
+%  \frametitle{Complex fluids}
+%\centering \Large  The coexistence between a liquid and solid phase
+%  \begin{figure}
+%    \centering
+%    \includegraphics[width=0.5\linewidth]{membrane}\includegraphics[width=0.2\linewidth]{star}
+%    \includegraphics[width=0.2\linewidth]{optofluidics}\\
+%    {\fontsize{4.5}{12} \selectfont [{\bf Panzuela, S. and Delgado-Buscalioni, R.} PRL 2018.]  -  [{\bf Raul P. Pelaez and Delgado-Buscalioni, R.} Macromolecules 2020]    -   [{\bf  Mel\'endez, M.} et. al. PRE 2019.]}\\
+%    \movie[autostart,loop,poster,showcontrols=true,width=0.3\linewidth]{\includegraphics[width=0.3\linewidth]{virus_scr.png}}{gfx/virus.mp4}%
+%    \movie[autostart,loop,poster,showcontrols=true,width=0.3\linewidth]{\includegraphics[width=0.3\linewidth]{rots.png}}{gfx/rots.mp4}%
+%      \includegraphics[width=0.3\linewidth]{q2Dcolorstripe}\\
+%      {\fontsize{4.5}{12} \selectfont [Courtesy of Pablo Ibañez] ------------ [Courtesy of Berta Tinao] -------------- [{\bf Raul P. Pelaez} et. al. JSTAT 2018.]}%
+%  \end{figure}
+%\end{frame}
+%
+%
+%\subsubsection{Numerical techniques}
+%\begin{frame}
+%  \frametitle{Complex fluids}
+%  \framesubtitle{The spatio-temporal landscape of numerical techniques.}
+%  \begin{figure}
+%    \centering
+%    \begin{tikzpicture}
+%      \only<1-5>{\node[anchor=south west, inner sep=0] (image) {\includesvg[width=0.8\linewidth]{gfx/landscape}};}
+%      \begin{scope}[shift={(image.south west)},x={(image.south east)},y={(image.north west)}]
+%        %\draw foreach \xy in {0,0.1,...,1.001}{(\xy,0) -- node[pos=0,below]{\pgfmathprintnumber{\xy}} (\xy,1)(0,\xy) -- node[pos=0,left]{\pgfmathprintnumber{\xy}} (1,\xy)};
+%        \only<2>{\filldraw[red, opacity=0.6] (0.12,1) rectangle (0.5,0.07) node[midway] (A) {};\node[above=50pt of A, black]{\contourlength{1pt}\contour{white}{\textbf{Fully Lagrangian}}};}
+%        \only<4>{\filldraw[blue, opacity=0.6] (0.5,1) rectangle (0.72,0.07) node[midway] (A) {};\node[below=40pt of A, black, align=left]{\contourlength{1pt}\contour{white}{\textbf{Immersed}}\\\contourlength{1pt}\contour{white}{\textbf{Boundary}}}; \node[above=30pt of A, black, align=left]{\contourlength{1pt}\contour{white}{\textbf{Eulerian}}\\\contourlength{1pt}\contour{white}{\textbf{Lagrangian}}};}
+%        \only<3>{\filldraw[green, opacity=0.6] (0.72,1) rectangle (1,0.07) node[midway] (A) {};\node[above=50pt of A, black]{\contourlength{1pt}\contour{white}{\textbf{Fully Eulerian}}};}
+%      \end{scope}
+%    \end{tikzpicture}
+%    \caption{Figure courtesy of Rafael Delgado-Buscalioni.}
+%  \end{figure}
+%\end{frame}
+%
+%\subsubsection{Coarse-grained levels of description}
+%\begin{frame}
+%  \frametitle{Complex fluids}
+%  \framesubtitle{Usual levels of coarse-grained description}
+%  \begin{figure}
+%    \centering
+%    \includesvg[width=0.55\linewidth]{gfx/multiscale}
+%  \end{figure}
+%\end{frame}
+%
+%
+%\begin{frame}[t]
+%  \frametitle{Complex fluids}
+%  \framesubtitle{Usual levels of coarse-grained description}
+%  \begin{columns}[T]
+%    \begin{column}{0.5\linewidth}
+%      \includesvg[width=\linewidth]{gfx/multiscale}
+%      \end{column}
+%      \begin{column}{0.45\linewidth}
+%      \begin{center}
+%        \textbf{Relevant variables:}
+%      \end{center}
+%      \begin{itemize}
+%      \item $\vec{q}_i$: Position of particle $i$.
+%      \item $\vec{u}_i$: Velocity of particle $i$.
+%      \item $\xi(\vec{q}_{ij})$: Friction kernel.
+%      \item $\vec{v}(\vec{r},t)$: Fluid velocity field.
+%      \item $\tens{M}(\vec{q}_{ij})$: Mobility tensor.
+%      \end{itemize}
+%      \centering
+%      \textbf{Timescale range:}\newline $\tau \sim [10^{-12}, 10^{-3}]s$
+%    \end{column}
+%  \end{columns}
+%  \only<2>{\begin{textblock*}{0.99\linewidth}(0.04\linewidth,0.8\paperheight)
+%    \begin{alertblock}{\centering \Large We always have}
+%      \centering \Large
+%      Interacting \emph{particles} with a \emph{state} that \emph{evolves}.
+%    \end{alertblock}
+%  \end{textblock*}
+%  }
+%\end{frame}
+%
+%\section{Computational challenges}
 
 \section{The Force Coupling Method}
-\begin{frame}
-  \frametitle{Talk outline}
-    \tableofcontents[
-    sectionstyle=show/show,
-    subsectionstyle=hide/hide/hide,
-    subsubsectionstyle=hide/hide/hide/hide
-    ]
-\end{frame}
-\begin{frame}
-  \frametitle{Hydrodynamics}
-  \framesubtitle{Algorithms for Brownian Dynamics with Hydrodynamic Interactions (BDHI)}
-    \begin{figure}
-    \centering
-    \includesvg[width=0.55\linewidth]{gfx/multiscale}
-  \end{figure}
-  \note{
-    \begin{itemize}
-    \item And note that my contributions focus on the Smoluchowski level.
-    \end{itemize}
-  }
-\end{frame}
-
-\begin{frame}
-  \frametitle{Complex fluids}
-  \framesubtitle{The spatio-temporal landscape of numerical techniques.}
-  \begin{figure}
-    \centering    
-    \begin{tikzpicture}
-      \node[anchor=south west, inner sep=0] (image) {\includesvg[width=0.8\linewidth]{gfx/landscape}};
-      \onslide<2>{
-        \begin{scope}[shift={(image.south west)},x={(image.south east)},y={(image.north west)}]
-        \filldraw[blue, opacity=0.6] (0.5,1) rectangle (0.72,0.07) node[midway] (A) {};\node[below=40pt of A, black, align=left]{\contourlength{1pt}\contour{white}{\textbf{Eulerian}}\\\contourlength{1pt}\contour{white}{\textbf{Lagrangian}}};
-      \end{scope}
-      }
-    \end{tikzpicture}
-    \caption{Figure courtesy of Rafael Delgado-Buscalioni.}
-  \end{figure}
-  \note{
-    \begin{itemize}
-    \item Which will require techniques that mix both continuous fields and particles.
-    \end{itemize}
-    }
-\end{frame}
-
+%\begin{frame}
+%  \frametitle{Talk outline}
+%    \tableofcontents[
+%    sectionstyle=show/show,
+%    subsectionstyle=hide/hide/hide,
+%    subsubsectionstyle=hide/hide/hide/hide
+%    ]
+%\end{frame}
+%
 
 \subsection{Hydrodynamics}
 \begin{frame}
@@ -494,15 +309,8 @@
       \end{column}
       \begin{column}{0.63\linewidth}
         \onslide<3->{
-          {
-            \begin{center}
-              \huge \textbf{Green formalism}
-            \end{center}
-          }
-          \centering $\vec{v}(\vec{r}) = \oper{G}\tilde{\vec{f}}
-          \onslide<4->{
-            :=\int{\oper{G}(\vec{r}, \vec{r}^\prime)\tilde{\vec{f}}(\vec{r}^\prime) d\vec{r}^\prime}
-          }$ %\left(\oper{S}\vec{F} + \nabla\cdot\mathcal{Z}\right)$$
+          \centering $\vec{v}(\vec{r}) = \oper{G}\left(\vec{f}(\vec{r}) + \nabla\cdot\tens{Z}\right)
+          $
           \onslide<5->{
             \begin{block}{Force Coupling Method (FCM)}
               \centering $\frac{d\vec{q}_i}{dt} = \vec{u}_i = \oper{J}_{\vec{\ppos}_i}\oper{G}(\oper{S}\vec{F} + \nabla\cdot\mathcal Z)$
@@ -519,36 +327,36 @@
               \end{equation*}
             }%
             \onslide<7->{\centering $\oper{G} :=-\eta^{-1}\nabla^{-2}\left(\mathbb{I} - \nabla\nabla^{-2}\nabla\right)$\\}%
-            \onslide<8>{
-              \begin{block}{\centering Open boundaries}
-                \centering $\oper{G}\rightarrow \tens{O}(\vec{r}) = \frac{1}{8\pi\eta r}\left(\mathbb{I} - \frac{\vec{r}\otimes\vec{r}}{r^2}\right)$
-              \end{block}
-            }
+%            \onslide<8>{
+%              \begin{block}{\centering Open boundaries}
+%                \centering $\oper{G}\rightarrow \tens{O}(\vec{r}) = \frac{1}{8\pi\eta r}\left(\mathbb{I} - \frac{\vec{r}\otimes\vec{r}}{r^2}\right)$
+%              \end{block}
+%            }
           \end{overlayarea}
         }
       \end{column}
     \end{columns}
   \end{frame}
 
-\begin{frame}
-  \frametitle{Hydrodynamics}
-  \framesubtitle{Triply periodic FCM}
-  \begin{overprint}
-    \huge
-    \begin{equation*}
-    \tikz[baseline, remember picture]{\node[anchor=base] (a) {$\vec{u}_i= \oper{J}_{\vec{\ppos}_i}\oper{G}(\oper{S}\vec{F} + \nabla\cdot\mathcal Z)$};}
-  \end{equation*}
-  \vspace*{50pt}
-  \onslide<2->{
-        \begin{equation*}
-        \tikz[baseline, remember picture]{ \node[anchor=base] (b) {$\vec{u}_i = \oper{J}_{\vec{\ppos}_i}\onslide<3>{\mathfrak{F}^{-1}}\only<3>{\fou{\oper{G}}}\only<2>{\oper{G}}(\onslide<3>{\mathfrak{F}}\oper{S}\vec{F} + \onslide<2>{\nabla}\onslide<3>{\vec{k}}\cdot\mathcal Z\onslide<3>{_{\vec{k}}})$};}
-      \end{equation*}
-      \begin{tikzpicture}[overlay, remember picture]
-        \path[very thick, -Triangle, line width=3pt] (a) edge node[midway, above right] {$\mathfrak{F}$: Fourier transform} (b);
-      \end{tikzpicture}
-    }
-  \end{overprint}
-\end{frame}
+%\begin{frame}
+%  \frametitle{Hydrodynamics}
+%  \framesubtitle{Triply periodic FCM}
+%  \begin{overprint}
+%    \huge
+%    \begin{equation*}
+%    \tikz[baseline, remember picture]{\node[anchor=base] (a) {$\vec{u}_i= \oper{J}_{\vec{\ppos}_i}\oper{G}(\oper{S}\vec{F} + \nabla\cdot\mathcal Z)$};}
+%  \end{equation*}
+%  \vspace*{50pt}
+%  \onslide<2->{
+%        \begin{equation*}
+%        \tikz[baseline, remember picture]{ \node[anchor=base] (b) {$\vec{u}_i = \oper{J}_{\vec{\ppos}_i}\onslide<3>{\mathfrak{F}^{-1}}\only<3>{\fou{\oper{G}}}\only<2>{\oper{G}}(\onslide<3>{\mathfrak{F}}\oper{S}\vec{F} + \onslide<2>{\nabla}\onslide<3>{\vec{k}}\cdot\mathcal Z\onslide<3>{_{\vec{k}}})$};}
+%      \end{equation*}
+%      \begin{tikzpicture}[overlay, remember picture]
+%        \path[very thick, -Triangle, line width=3pt] (a) edge node[midway, above right] {$\mathfrak{F}$: Fourier transform} (b);
+%      \end{tikzpicture}
+%    }
+%  \end{overprint}
+%\end{frame}
 
 \begin{frame}
   \frametitle{Hydrodynamics}
@@ -566,7 +374,7 @@
   \framesubtitle{New algorithms for Brownian Dynamics with Hydrodynamic Interactions (BDHI)}
    \begin{block}{\centering Force Coupling Method}
       \begin{center}
-        \Large $\vec{u}_i = \oper{J}_{\vec{\ppos}_i}\mathfrak{F}^{-1}\fou{\oper{G}}_\text{\tiny 3D}\big(\mathfrak{F}\oper{S}\vec{F} + \vec{k}\cdot\mathcal Z\big)$
+        \Large $\vec{u}_i = \oper{J}_{\vec{\ppos}_i}\oper{G}\big(\oper{S}\vec{F} + \nabla\cdot\mathcal Z\big)$
       \end{center}
    \end{block}
   \begin{columns}[T]
@@ -637,15 +445,6 @@
 \end{frame}
 
 \section{UAMMD}
-\begin{frame}
-  \frametitle{Talk outline}
-  \tableofcontents[
-  sectionstyle=show/shaded,
-  subsectionstyle=show/show/hide,
-  subsubsectionstyle=show/show/show/hide
-  ]
-  \note{In this final section I will introduce UAMMD, the GPU software framework for complex fluids that encases, among others, all the algorithms I have previously introduced.}
-\end{frame}
 
 \begin{frame}
   \frametitle{Universally Adaptable Multiscale Molecular Dynamics}
@@ -661,6 +460,19 @@
   \item<3-> Hackable
   \item<4-> Focus on hydrodynamics
   \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Complex fluids}
+  \framesubtitle{Usual levels of coarse-grained description}
+  \begin{figure}
+    \centering
+    \includesvg[width=0.45\linewidth]{gfx/multiscale}
+  \end{figure}
+  \begin{block}{\centering We always have}
+    \centering ``Interacting \emph{particles} with a state that \emph{evolves}''
+  \end{block}
+
 \end{frame}
 
 \subsection{Basic code structure}
@@ -755,14 +567,14 @@
 \end{frame}
 
 \section{Examples}
-\begin{frame}
-  \frametitle{Talk outline}
-    \tableofcontents[
-    sectionstyle=show/show,
-    subsectionstyle=hide/hide/hide,
-    subsubsectionstyle=hide/hide/hide/hide
-    ]
-\end{frame}
+%\begin{frame}
+%  \frametitle{Talk outline}
+%    \tableofcontents[
+%    sectionstyle=show/show,
+%    subsectionstyle=hide/hide/hide,
+%    subsubsectionstyle=hide/hide/hide/hide
+%    ]
+%\end{frame}
 
 
 \begin{frame}[fragile]
@@ -783,6 +595,64 @@
   \end{center}
 \end{frame}
 
+
+\subsection{Particle-grid coupling}
+\begin{frame}
+  \frametitle{Particle-grid coupling}
+  \setbeamercovered{transparent=40}
+  \begin{columns}[T]
+    \begin{column}{0.6\linewidth}
+      \begin{overlayarea}{\linewidth}{0.5\paperheight}
+        \only<2->{
+          \centering Spreading ($\oper{S}$):
+          $$\vec{f}(\vec{r}) = \oper{S}(\vec{r})\vec{F} := \sum_i \vec{F}_i\delta_a(\vec{r}-\vec{q}_i)$$
+          \only<3->{{$\delta_a(\vec{r}) := \phi(r_x)\phi(r_y)\phi(r_z)\rightarrow$ Smeared delta}\newline\newline}
+        }
+        \only<4>{
+          \centering Interpolation ($\oper{J}$):
+          $$\vec{u}_i = \oper{J}_{\vec{q}_i}\vec{v}(\vec{r}) = \int \vec{v}(\vec{r})\delta_a(\vec{r}-\vec{q}_i)d\vec{r}$$
+        }
+        \only<5>{
+          \centering Interpolation ($\oper{J}$):
+          $$\vec{u}_i = \oper{J}_{\vec{q}_i}\vec{v}(\vec{r}) \approx \sum_n \vec{v}_n\delta_a(\vec{r}_n-\vec{q}_i)h^3$$
+        }        
+      \end{overlayarea}
+    \end{column}
+    \begin{column}{0.4\linewidth}
+      \onslide*<2->{
+      \begin{figure}
+        \centering                 
+        \only<2>{\includesvg[width=\linewidth]{gfx/ibm_spread}}%
+        \only<3>{          
+          \resizebox{\linewidth}{!}{
+            \begin{tikzpicture}
+              \begin{axis}[ticks=none,samples=100,ylabel={\Huge $\phi(r)$},xlabel={\Huge $r$}, xlabel near ticks, ylabel near ticks, axis line style=ultra thick]
+                \addplot[blue, ultra thick, domain=-1:1] {exp(-x^2*10)};
+              \end{axis}
+            \end{tikzpicture}
+          }
+        }
+        \only<4,5>{\includesvg[width=\linewidth]{gfx/ibm_interp}}%
+      \end{figure}
+    }
+    \only<3>{\centering Example: $\phi(r) \propto e^{-\frac{r^2}{2\sigma^2}}$}
+    \end{column}
+  \end{columns}
+  \setbeamercovered{transparent=0}
+  \onslide<2>{{\footnotesize Supervector notation $\vec{F} := \{\vec{F}_1,\dots,\vec{F}_N\}$}}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Particle-grid coupling}
+  \framesubtitle{Performance}
+  \centering
+  \includesvg[width=0.35\columnwidth]{gfx/gridparticlesdense}
+  \includegraphics[width=0.55\columnwidth]{gfx/ibm_comp_dens1_sorted_2080ti}
+    \begin{center}
+    \scriptsize 3D random distribution. Ran with a single RTX2080Ti GPU.
+  \end{center}
+\end{frame}
+
 \begin{frame}[fragile]
   \frametitle{Particle-grid coupling}
   \begin{columns}[T]
@@ -798,6 +668,63 @@
   \end{columns}
 \end{frame}
 
+
+%\begin{frame}
+%  \frametitle{Tools}
+%  \setbeamercovered{transparent=40}
+%  \begin{columns}[T]
+%    \begin{column}{0.6\linewidth}
+%      \begin{enumerate}
+%        \Large
+%      \item Short range interactions
+%      \item Particle-grid coupling
+%      \end{enumerate}
+%      \begin{overlayarea}{\linewidth}{0.5\paperheight}
+%        \only<2>{\centering Example: Lennard-Jones potential
+%          $$U_{LJ}(r) = 
+%            \begin{cases}
+%              4 \epsilon \left[ \left(\frac{\sigma}{r}\right)^{12} - \left( \frac{\sigma}{r}\right)^6 \right] & r<r_c\\
+%              0 & r\ge r_c
+%            \end{cases}$$
+%          }
+%      \end{overlayarea}
+%    \end{column}
+%    \begin{column}{0.4\linewidth}
+%      \only<2>{
+%        \begin{figure}
+%          \centering                 
+%          \includesvg[width=\linewidth]{gfx/nlist}
+%        \end{figure}
+%      }
+%    \end{column}
+%  \end{columns}
+%\end{frame}
+%
+%\subsection{Short range}
+%\begin{frame}
+%  \frametitle{Short range interactions}
+%  \framesubtitle{Neighbour lists}
+%  \begin{figure}
+%    \centering
+%    \includesvg[width=0.8\linewidth]{gfx/sketchUAMMD_nlist}%    
+%  \end{figure}
+%\end{frame}
+%\begin{frame} 
+%  \frametitle{Short range interactions}
+%  \framesubtitle{Neighbour lists: Performance}
+%  \begin{block}{Example: Lennard-Jones potential, $r_c=2.5\sigma$ and $\varepsilon = kT$.}
+%    $$U_{LJ}(r) = 
+%    \begin{cases}
+%      4 \varepsilon \left[ \left(\frac{\sigma}{r}\right)^{12} - \left( \frac{\sigma}{r}\right)^6 \right] & r<r_c\\
+%      0 & r\ge r_c
+%    \end{cases}$$
+%  \end{block}
+%  \includegraphics[width=0.49\linewidth]{nlistperf_dens1}
+%  \includegraphics[width=0.49\linewidth]{nlistperf_dens0.1}
+%  \begin{center}
+%    \scriptsize Ran with a single RTX2080Ti GPU.
+%  \end{center}
+%\end{frame}
 
 
 
