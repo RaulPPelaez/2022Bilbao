@@ -1,4 +1,4 @@
-# Latex sources for my Ph.D. dissertation
+# Latex sources for Raul's software tutorial
 
 These slides come with a script, you can show it in the slides by uncommenting the line ```\setbeameroption{show notes on second screen}``` in main.tex and recompiling.  
 
