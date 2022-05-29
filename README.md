@@ -7,7 +7,7 @@ One of them reproduces the "falling logo" simulation that you can see in the UAM
 The slides contain some information about the solvers in UAMMD, as well as providing an introduction to the infrastructure itself.  
 If you want to learn more about UAMMD, you can check its documentation:
 
-[uammd.readthedocs.io](uammd.readthedocs.io)
+[uammd.readthedocs.io](https://uammd.readthedocs.io)
 
 You can also check out my [Ph.D. manuscript](https://github.com/RaulPPelaez/phd) or my [dissertation](https://github.com/RaulPPelaez/phd-dissertation). Both of them introduce UAMMD, its novelties and the algorithms that the framework exposes.
 
